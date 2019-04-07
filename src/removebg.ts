@@ -32,18 +32,19 @@ const setOrderError = (orderRef: FirebaseFirestore.DocumentReference) => {
  */
 const makeThumb = async (
   orderRef: FirebaseFirestore.DocumentReference,
+  userId: string,
   imageBuffer: Buffer,
   fileName: string
 ) => {
+  // Quick checks
+  if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
+
   const workingDir = join(tmpdir(), 'thumbs')
   const thumbFileName = `@thumb_${fileName}`
   const tmpFilePath = join(workingDir, `@removedbg_${fileName}`)
   const bucketFilePath = bucket.file(
-    `@thumbs/${thumbFileName}_${randomFileName()}.png`
+    `@thumbs/${userId}/${thumbFileName}_${randomFileName()}.png`
   )
-
-  // Quick checks
-  if (!imageBuffer || !fileName) return setOrderError(orderRef)
 
   try {
     // Make sure dir exist, otherwise create it
@@ -98,7 +99,7 @@ export const removeBg = functions.firestore
         // Is there any buffer thrown back?
         if (!imageBuffer) return setOrderError(orderRef)
         // Concurrent thumbnail making action
-        makeThumb(orderRef, imageBuffer, fileName)
+        makeThumb(orderRef, userId, imageBuffer, fileName)
         // File path where the file gonna be stored in GCS
         const bucketFilePath = makeBucketFilePath(userId, fileName)
         // Upload the new buffer back to GCS
