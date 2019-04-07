@@ -1,0 +1,32 @@
+{
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase serve --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "main": "lib/index.js",
+  "engines": {
+    "node": "8"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^2.4.3",
+    "@types/request-promise": "^4.1.42",
+    "@types/sharp": "^0.22.1",
+    "ffmpeg-on-progress": "^1.0.0",
+    "firebase-admin": "~6.0.0",
+    "firebase-functions": "^2.2.1",
+    "fs-extra": "^7.0.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "sharp": "^0.22.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.5",
+    "typescript": "^3.4.1"
+  },
+  "private": true
+}

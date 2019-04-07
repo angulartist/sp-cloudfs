@@ -1,0 +1,1 @@
+export { removeBg } from './removebg'
