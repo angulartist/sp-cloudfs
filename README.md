@@ -1,4 +1,3 @@
-# cloud-functions-ffmpeg-video-processing
+### To get signed urls, make sure App Engine has CFAS rights :
 
-Because sometimes it's hard to tell.
-
+![img](https://i.imgur.com/XjX4zHG.png)
