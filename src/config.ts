@@ -18,15 +18,13 @@ export const signedUrlCfg: {
 } = { action: 'read', expires: '01-01-6969' }
 
 // RemoveBG
+const size: string = 'auto'
+const encoding: any = null
 export const key = functions.config().removebg.key
 export const apiOpts = {
   method: 'POST',
   uri: 'https://api.remove.bg/v1.0/removebg',
-  formData: {
-    size: 'auto'
-  },
-  headers: {
-    'X-Api-Key': key
-  },
-  encoding: null
+  formData: { size },
+  headers: { 'X-Api-Key': key },
+  encoding
 }

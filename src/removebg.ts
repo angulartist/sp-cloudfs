@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions'
+import { File } from '@google-cloud/storage'
 import * as rp from 'request-promise'
 import * as fs from 'fs-extra'
 import * as sharp from 'sharp'
@@ -6,11 +7,9 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { db, bucket, signedUrlCfg, apiOpts } from './config'
 import { randomFileName, makeBucketFilePath } from './helpers'
-// Models
-import { STATE } from './models/state'
-import { File } from '@google-cloud/storage'
 
-// Orders firestore collection reference
+import { STATE } from './models/state'
+
 const ordersRef: FirebaseFirestore.CollectionReference = db.collection('orders')
 
 /**
@@ -25,85 +24,33 @@ const setOrderError = (orderRef: FirebaseFirestore.DocumentReference) => {
   }
 }
 
-export const imageManipulation = async (
-  orderRef: FirebaseFirestore.DocumentReference,
-  userId: string,
-  imageBuffer: Buffer,
-  fileName: string
-) => {
-  // Quick checks
-  if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
-
-  // Working dir settings
-  const workingDir: string = join(tmpdir(), 'sharp_editing')
-  const originalFilePath: string = join(workingDir, `@original_${fileName}`)
-  const watermarkFileName: string = `@watermark_${fileName}`
-  const thumbnailFileName: string = `@thumbnail_${fileName}`
-
-  // GCS bucket paths
-  const watermarkBucketFilePath: File = bucket.file(
-    `@watermarks/${userId}/${watermarkFileName}_${randomFileName()}.png`
-  )
-  const thumbnailBucketFilePath: File = bucket.file(
-    `@thumbnails/${userId}/${thumbnailFileName}_${randomFileName()}.png`
-  )
-
-  try {
-    // Make sure dir exist, otherwise create it
-    await fs.ensureDir(workingDir)
-    // Write the image buffer to the tmp/ dir
-    await new Promise((resolve, reject) => {
-      fs.writeFile(originalFilePath, imageBuffer, err => {
-        if (err) reject(err)
-        else resolve()
-      })
-    })
-
-    // Some sharp magic!
-    const [watermarkImageBuffer, thumbnailImageBuffer] = await Promise.all([
-      buildImageBuffer(416, 352, originalFilePath),
-      buildImageBuffer(96, 96, originalFilePath)
-    ])
-
-    // Upload the thumbnail back to GCS
-    await Promise.all([
-      saveFileToBucket(watermarkBucketFilePath, watermarkImageBuffer),
-      saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
-    ])
-
-    // Get signed URLs from GCS
-    const [watermarkURL, thumbnailURL] = await Promise.all([
-      getGCSSignedUrl(watermarkBucketFilePath),
-      getGCSSignedUrl(thumbnailBucketFilePath)
-    ])
-
-    // Delete working dir to free space
-    fs.remove(workingDir)
-
-    // Update the current order w/ the previewURL
-    return orderRef.update({
-      watermarkURL,
-      thumbnailURL
-    })
-  } catch (error) {
-    fs.remove(workingDir)
-    return setOrderError(orderRef)
-  }
-}
-
+/**
+ * Get a signed URL from App Engine
+ * @param bucketFilePath File path in GCS project bucket
+ */
 const getGCSSignedUrl = async (bucketFilePath: File): Promise<string> => {
   const [signedURL] = await bucketFilePath.getSignedUrl(signedUrlCfg)
-
   return signedURL
 }
 
+/**
+ * Upload a file to GCS for a given path
+ * @param bucketFilePath File path in GCS project bucket
+ * @param imageBuffer Raw image data
+ */
 const saveFileToBucket = async (
   bucketFilePath: File,
   imageBuffer: Buffer
 ): Promise<void> =>
   await bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
 
-const buildImageBuffer = async (
+/**
+ * Resize an image buffer
+ * @param width Width of the image
+ * @param height Height of the image
+ * @param tmpFilePath File path in /tmp/ directory
+ */
+const resizeImageBuffer = async (
   width: number,
   height: number,
   tmpFilePath: string
@@ -114,37 +61,119 @@ const buildImageBuffer = async (
     .toBuffer()
 
 /**
+ * Add a watermark to an image buffer
+ * @param tmpFilePath File path in /tmp/ directory
+ */
+const overlayImageBuffer = async (tmpFilePath: string): Promise<Buffer> =>
+  await sharp(tmpFilePath)
+    .blur()
+    .composite([
+      {
+        // TODO: GCS
+        input: './assets/watermark.png',
+        gravity: 'southeast',
+        tile: true
+      }
+    ])
+    .toBuffer()
+
+/**
+ * Calculate image buffer dimensions and calculate the price
+ * @param imageBuffer Image buffer thrown back by the API
+ */
+const calcImageCost = async (imageBuffer: Buffer) => {
+  const imagePipeline = sharp(imageBuffer)
+  const { width, height } = await imagePipeline.metadata()
+}
+
+/**
+ * Generate a thumbnail and a watermarked and then upload them to GCS
+ * @param orderRef Current order firestore document reference
+ * @param userId User ID who has instanciate the order
+ * @param imageBuffer Image buffer thrown back by the API
+ * @param fileName Original file name
+ */
+export const imageManipulation = async (
+  orderRef: FirebaseFirestore.DocumentReference,
+  userId: string,
+  imageBuffer: Buffer,
+  fileName: string
+) => {
+  if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
+
+  const workingDir: string = join(tmpdir(), 'sharp_editing')
+  const originalFilePath: string = join(workingDir, `@original_${fileName}`)
+  const watermarkFileName: string = `@watermark_${fileName}`
+  const thumbnailFileName: string = `@thumbnail_${fileName}`
+
+  const watermarkBucketFilePath: File = bucket.file(
+    `@watermarks/${userId}/${watermarkFileName}_${randomFileName()}.png`
+  )
+  const thumbnailBucketFilePath: File = bucket.file(
+    `@thumbnails/${userId}/${thumbnailFileName}_${randomFileName()}.png`
+  )
+
+  try {
+    await fs.ensureDir(workingDir)
+
+    await new Promise((resolve, reject) => {
+      fs.writeFile(originalFilePath, imageBuffer, err => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
+
+    const [watermarkImageBuffer, thumbnailImageBuffer] = await Promise.all([
+      overlayImageBuffer(originalFilePath),
+      resizeImageBuffer(96, 96, originalFilePath)
+    ])
+
+    await Promise.all([
+      saveFileToBucket(watermarkBucketFilePath, watermarkImageBuffer),
+      saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
+    ])
+
+    const [watermarkURL, thumbnailURL] = await Promise.all([
+      getGCSSignedUrl(watermarkBucketFilePath),
+      getGCSSignedUrl(thumbnailBucketFilePath)
+    ])
+
+    fs.remove(workingDir)
+
+    return orderRef.update({
+      watermarkURL,
+      thumbnailURL,
+      state: STATE.SUCCESS
+    })
+  } catch (error) {
+    fs.remove(workingDir)
+    return setOrderError(orderRef)
+  }
+}
+
+/**
  * Main functon.
  */
 export const removeBg = functions.firestore
   .document('orders/{orderId}')
   .onCreate(
     async (snapShot: FirebaseFirestore.DocumentSnapshot, { params }) => {
-      // Current order ID
       const { orderId } = params
-      // Current order K/V pairs
+
       const { userId, originalURL, fileName } = snapShot.data()
-      // Current order firestore document reference
+
       const orderRef = ordersRef.doc(orderId)
 
-      // [PROCESS]
-
       try {
-        // Ask for a process
         const imageBuffer: Buffer = await rp({
           ...apiOpts,
           formData: { ...apiOpts.formData, image_url: originalURL }
         })
-        // Is there any buffer thrown back?
+
         if (!imageBuffer) return setOrderError(orderRef)
-        // Concurrent thumbnail making action
-        await imageManipulation(orderRef, userId, imageBuffer, fileName)
-        // Update the current order state
-        return orderRef.update({
-          state: STATE.SUCCESS
-        })
+
+        return imageManipulation(orderRef, userId, imageBuffer, fileName)
       } catch (error) {
-        // TODO: Error logging
         return setOrderError(orderRef)
       }
     }
