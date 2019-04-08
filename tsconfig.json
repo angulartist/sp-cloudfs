@@ -6,7 +6,8 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": false,
-    "target": "es2015"
+    "target": "es6",
+    "lib": ["es6"]
   },
   "compileOnSave": true,
   "include": ["src"]

@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^2.4.3",
+    "@types/es6-promise": "^3.3.0",
     "@types/request-promise": "^4.1.42",
     "@types/sharp": "^0.22.1",
-    "ffmpeg-on-progress": "^1.0.0",
     "firebase-admin": "~6.0.0",
     "firebase-functions": "^2.2.1",
     "fs-extra": "^7.0.1",
