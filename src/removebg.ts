@@ -44,7 +44,7 @@ const saveFileToBucket = async (
   bucketFilePath: File,
   imageBuffer: Buffer
 ): Promise<void> =>
-  await bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
+  bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
 
 /**
  * Resize an image buffer
@@ -69,11 +69,11 @@ const resizeImageBuffer = async (
 const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
   const overlayBuffer = await rp(overlayURL, { encoding: null })
 
-  if (overlayBuffer) {
-    return sharp(imageBuffer)
-      .composite([{ input: overlayBuffer, tile: true }])
-      .toBuffer()
-  }
+  if (!overlayBuffer) Promise.reject('No buffer')
+
+  return sharp(imageBuffer)
+    .composite([{ input: overlayBuffer, tile: true }])
+    .toBuffer()
 }
 
 /**
@@ -97,7 +97,7 @@ export const imageManipulation = async (
   userId: string,
   imageBuffer: Buffer,
   fileName: string
-) => {
+): Promise<FirebaseFirestore.WriteResult> => {
   if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
 
   // GCS bucket paths
