@@ -2,12 +2,17 @@ import * as functions from 'firebase-functions'
 import { File } from '@google-cloud/storage'
 import * as rp from 'request-promise'
 import * as sharp from 'sharp'
-import { db, bucket, signedUrlCfg, apiOpts } from './config'
+import {
+  db,
+  bucket,
+  signedUrlCfg,
+  apiOpts,
+  overlayURL,
+  ordersRef
+} from './config'
 import { randomFileName } from './helpers'
-
+// Models
 import { STATE } from './models/state'
-
-const ordersRef: FirebaseFirestore.CollectionReference = db.collection('orders')
 
 /**
  * [UI] Update the order state to error.
@@ -52,19 +57,24 @@ const resizeImageBuffer = async (
   height: number,
   imageBuffer: Buffer
 ): Promise<Buffer> =>
-  await sharp(imageBuffer)
+  sharp(imageBuffer)
     .resize(width, height, { fit: 'inside' })
     .png()
     .toBuffer()
 
 /**
- * Add a watermark to an image buffer
- * @param tmpFilePath File path in /tmp/ directory
+ * Add an overlay (watermark) to the image buffer
+ * @param imageBuffer Image buffer thrown back by the API
  */
-const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> =>
-  await sharp(imageBuffer)
-    .blur()
-    .toBuffer()
+const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
+  const overlayBuffer = await rp(overlayURL, { encoding: null })
+
+  if (overlayBuffer) {
+    return sharp(imageBuffer)
+      .composite([{ input: overlayBuffer, tile: true }])
+      .toBuffer()
+  }
+}
 
 /**
  * Calculate image buffer dimensions and calculate the price

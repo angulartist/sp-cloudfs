@@ -7,6 +7,9 @@ admin.initializeApp()
 export const db = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 export const timestamp: FirebaseFirestore.FieldValue = admin.firestore.FieldValue.serverTimestamp()
+export const ordersRef: FirebaseFirestore.CollectionReference = db.collection(
+  'orders'
+)
 
 // Storage
 export const gcs = new storage.Storage()
@@ -18,6 +21,8 @@ export const signedUrlCfg: {
 } = { action: 'read', expires: '01-01-6969' }
 
 // RemoveBG
+export const overlayURL: string =
+  'https://i.kym-cdn.com/photos/images/masonry/001/452/786/271.png'
 const size: string = 'auto'
 const encoding: any = null
 export const key = functions.config().removebg.key
