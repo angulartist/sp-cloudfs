@@ -67,14 +67,6 @@ const resizeImageBuffer = async (
 const overlayImageBuffer = async (tmpFilePath: string): Promise<Buffer> =>
   await sharp(tmpFilePath)
     .blur()
-    .composite([
-      {
-        // TODO: GCS
-        input: './assets/watermark.png',
-        gravity: 'southeast',
-        tile: true
-      }
-    ])
     .toBuffer()
 
 /**
@@ -128,14 +120,11 @@ export const imageManipulation = async (
       resizeImageBuffer(96, 96, originalFilePath)
     ])
 
-    await Promise.all([
-      saveFileToBucket(watermarkBucketFilePath, watermarkImageBuffer),
-      saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
-    ])
-
     const [watermarkURL, thumbnailURL] = await Promise.all([
       getGCSSignedUrl(watermarkBucketFilePath),
-      getGCSSignedUrl(thumbnailBucketFilePath)
+      getGCSSignedUrl(thumbnailBucketFilePath),
+      saveFileToBucket(watermarkBucketFilePath, watermarkImageBuffer),
+      saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
     ])
 
     fs.remove(workingDir)
@@ -154,8 +143,9 @@ export const imageManipulation = async (
 /**
  * Main functon.
  */
-export const removeBg = functions.firestore
-  .document('orders/{orderId}')
+export const removeBg = functions
+  .runWith({ memory: '1GB' })
+  .firestore.document('orders/{orderId}')
   .onCreate(
     async (snapShot: FirebaseFirestore.DocumentSnapshot, { params }) => {
       const { orderId } = params

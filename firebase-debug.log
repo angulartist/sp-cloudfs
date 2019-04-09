@@ -1,0 +1,19 @@
+[debug] [2019-04-09T05:35:53.054Z] ----------------------------------------------------------------------
+[debug] [2019-04-09T05:35:53.056Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only functions
+[debug] [2019-04-09T05:35:53.056Z] CLI Version:   6.4.0
+[debug] [2019-04-09T05:35:53.056Z] Platform:      darwin
+[debug] [2019-04-09T05:35:53.056Z] Node Version:  v10.10.0
+[debug] [2019-04-09T05:35:53.057Z] Time:          Tue Apr 09 2019 07:35:53 GMT+0200 (GMT+02:00)
+[debug] [2019-04-09T05:35:53.057Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2019-04-09T05:35:53.068Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-04-09T05:35:53.068Z] > authorizing via signed-in user
+[debug] [2019-04-09T05:35:53.068Z] [iam] checking project notbanana-7f869 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2019-04-09T05:35:53.070Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/notbanana-7f869:testIamPermissions  
+
+[debug] [2019-04-09T05:35:53.953Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Deploying to 'notbanana-7f869'...
+[info] 
+[info] i  deploying functions
+[info] Running command: npm --prefix "$RESOURCE_DIR" run build
