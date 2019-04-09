@@ -53,9 +53,9 @@ const saveFileToBucket = async (
 const resizeImageBuffer = async (
   width: number,
   height: number,
-  tmpFilePath: string
+  imageBuffer: Buffer
 ): Promise<Buffer> =>
-  await sharp(tmpFilePath)
+  await sharp(imageBuffer)
     .resize(width, height, { fit: 'inside' })
     .png()
     .toBuffer()
@@ -64,8 +64,8 @@ const resizeImageBuffer = async (
  * Add a watermark to an image buffer
  * @param tmpFilePath File path in /tmp/ directory
  */
-const overlayImageBuffer = async (tmpFilePath: string): Promise<Buffer> =>
-  await sharp(tmpFilePath)
+const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> =>
+  await sharp(imageBuffer)
     .blur()
     .toBuffer()
 
@@ -93,31 +93,18 @@ export const imageManipulation = async (
 ) => {
   if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
 
-  const workingDir: string = join(tmpdir(), 'sharp_editing')
-  const originalFilePath: string = join(workingDir, `@original_${fileName}`)
-  const watermarkFileName: string = `@watermark_${fileName}`
-  const thumbnailFileName: string = `@thumbnail_${fileName}`
-
+  // GCS bucket paths
   const watermarkBucketFilePath: File = bucket.file(
-    `@watermarks/${userId}/${watermarkFileName}_${randomFileName()}.png`
+    `@watermarks/${userId}/${fileName}_${randomFileName()}.png`
   )
   const thumbnailBucketFilePath: File = bucket.file(
-    `@thumbnails/${userId}/${thumbnailFileName}_${randomFileName()}.png`
+    `@thumbnails/${userId}/${fileName}_${randomFileName()}.png`
   )
 
   try {
-    await fs.ensureDir(workingDir)
-
-    await new Promise((resolve, reject) => {
-      fs.writeFile(originalFilePath, imageBuffer, err => {
-        if (err) reject(err)
-        else resolve()
-      })
-    })
-
     const [watermarkImageBuffer, thumbnailImageBuffer] = await Promise.all([
-      overlayImageBuffer(originalFilePath),
-      resizeImageBuffer(96, 96, originalFilePath)
+      overlayImageBuffer(imageBuffer),
+      resizeImageBuffer(96, 96, imageBuffer)
     ])
 
     const [watermarkURL, thumbnailURL] = await Promise.all([
@@ -127,15 +114,12 @@ export const imageManipulation = async (
       saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
     ])
 
-    fs.remove(workingDir)
-
     return orderRef.update({
       watermarkURL,
       thumbnailURL,
       state: STATE.SUCCESS
     })
   } catch (error) {
-    fs.remove(workingDir)
     return setOrderError(orderRef)
   }
 }

@@ -1,19 +1,148 @@
-[debug] [2019-04-09T05:35:53.054Z] ----------------------------------------------------------------------
-[debug] [2019-04-09T05:35:53.056Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only functions
-[debug] [2019-04-09T05:35:53.056Z] CLI Version:   6.4.0
-[debug] [2019-04-09T05:35:53.056Z] Platform:      darwin
-[debug] [2019-04-09T05:35:53.056Z] Node Version:  v10.10.0
-[debug] [2019-04-09T05:35:53.057Z] Time:          Tue Apr 09 2019 07:35:53 GMT+0200 (GMT+02:00)
-[debug] [2019-04-09T05:35:53.057Z] ----------------------------------------------------------------------
+[debug] [2019-04-09T05:40:11.214Z] ----------------------------------------------------------------------
+[debug] [2019-04-09T05:40:11.216Z] Command:       /usr/local/bin/node /usr/local/bin/firebase deploy --only functions
+[debug] [2019-04-09T05:40:11.216Z] CLI Version:   6.4.0
+[debug] [2019-04-09T05:40:11.216Z] Platform:      darwin
+[debug] [2019-04-09T05:40:11.217Z] Node Version:  v10.10.0
+[debug] [2019-04-09T05:40:11.217Z] Time:          Tue Apr 09 2019 07:40:11 GMT+0200 (GMT+02:00)
+[debug] [2019-04-09T05:40:11.217Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2019-04-09T05:35:53.068Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2019-04-09T05:35:53.068Z] > authorizing via signed-in user
-[debug] [2019-04-09T05:35:53.068Z] [iam] checking project notbanana-7f869 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
-[debug] [2019-04-09T05:35:53.070Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/notbanana-7f869:testIamPermissions  
+[debug] [2019-04-09T05:40:11.230Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2019-04-09T05:40:11.231Z] > authorizing via signed-in user
+[debug] [2019-04-09T05:40:11.231Z] [iam] checking project notbanana-7f869 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2019-04-09T05:40:11.232Z] >>> HTTP REQUEST POST https://cloudresourcemanager.googleapis.com/v1/projects/notbanana-7f869:testIamPermissions  
 
-[debug] [2019-04-09T05:35:53.953Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:12.603Z] <<< HTTP RESPONSE 200
 [info] 
 [info] === Deploying to 'notbanana-7f869'...
 [info] 
 [info] i  deploying functions
 [info] Running command: npm --prefix "$RESOURCE_DIR" run build
+[info] ✔  functions: Finished running predeploy script.
+[debug] [2019-04-09T05:40:18.882Z] > [functions] package.json contents: {
+  "name": "functions",
+  "scripts": {
+    "build": "tsc",
+    "serve": "npm run build && firebase serve --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "main": "lib/index.js",
+  "engines": {
+    "node": "8"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^2.4.3",
+    "@types/es6-promise": "^3.3.0",
+    "@types/request-promise": "^4.1.42",
+    "@types/sharp": "^0.22.1",
+    "firebase-admin": "~6.0.0",
+    "firebase-functions": "^2.2.1",
+    "fs-extra": "^7.0.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "sharp": "^0.22.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.5",
+    "typescript": "^3.4.1"
+  },
+  "private": true
+}
+[info] i  functions: ensuring necessary APIs are enabled...
+[debug] [2019-04-09T05:40:18.883Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/cloudfunctions.googleapis.com/projectSettings/notbanana-7f869?view=CONSUMER_VIEW  
+ 
+[debug] [2019-04-09T05:40:18.884Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/runtimeconfig.googleapis.com/projectSettings/notbanana-7f869?view=CONSUMER_VIEW  
+ 
+[debug] [2019-04-09T05:40:20.721Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:20.766Z] <<< HTTP RESPONSE 200
+[info] ✔  functions: all necessary APIs are enabled
+[debug] [2019-04-09T05:40:20.768Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/notbanana-7f869  
+ 
+[debug] [2019-04-09T05:40:21.694Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:21.695Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/697769708696:getServerAppConfig  
+ 
+[debug] [2019-04-09T05:40:21.991Z] <<< HTTP RESPONSE 200
+[info] i  functions: preparing functions directory for uploading...
+[debug] [2019-04-09T05:40:21.993Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs  
+ 
+[debug] [2019-04-09T05:40:22.386Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.387Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/stripe/variables  
+ 
+[debug] [2019-04-09T05:40:22.387Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/bucket/variables  
+ 
+[debug] [2019-04-09T05:40:22.388Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/removebg/variables  
+ 
+[debug] [2019-04-09T05:40:22.388Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/sendgrid/variables  
+ 
+[debug] [2019-04-09T05:40:22.388Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/shortlink/variables  
+ 
+[debug] [2019-04-09T05:40:22.605Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.606Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/bucket/variables/name  
+ 
+[debug] [2019-04-09T05:40:22.607Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.607Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/stripe/variables/secret  
+ 
+[debug] [2019-04-09T05:40:22.614Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.614Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/removebg/variables/key  
+ 
+[debug] [2019-04-09T05:40:22.621Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.621Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/shortlink/variables/workspace  
+ 
+[debug] [2019-04-09T05:40:22.621Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/shortlink/variables/apikey  
+ 
+[debug] [2019-04-09T05:40:22.685Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.686Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/notbanana-7f869/configs/sendgrid/variables/key  
+ 
+[debug] [2019-04-09T05:40:22.840Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.870Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.891Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.892Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.948Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:22.995Z] <<< HTTP RESPONSE 200
+[info] i  functions: packaged functions (252.39 KB) for uploading
+[debug] [2019-04-09T05:40:24.124Z] >>> HTTP REQUEST POST https://cloudfunctions.googleapis.com/v1/projects/notbanana-7f869/locations/us-central1/functions:generateUploadUrl  
+ 
+[debug] [2019-04-09T05:40:24.640Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:24.641Z] >>> HTTP REQUEST PUT https://storage.googleapis.com/gcf-upload-us-central1-14578958-534b-4bd2-a87c-82e5cee17adf/dab48784-6c6a-41e5-a27e-34f722b883be.zip?GoogleAccessId=service-697769708696@gcf-admin-robot.iam.gserviceaccount.com&Expires=1554790224&Signature=JfYDDyhpnD6b7fV1Uyh2cU0OI3i%2B6bm0NBIkaW1qTB5FYV0LfJ8uf4S0gaiWR%2BAESwN3%2F4u0Fi4VNKEKT9w0Ps7zsAFlaPTroeSIsPzWd1NfHqrzQhvGB7OUzp2MAJJ0wDFR4DTUDU9lws5Ac987RX0YqC2WVUqStVPHFw9oF7Y1ngKc4O18NZ5hW2HbPRptJ4vKdMQuCUHnLGfTxl0aLi2gOjtho1F%2BJ4LUO2ch%2Fvh4suHJ8O8pVGga0EApXsz8R5aVoWCslb%2F0OI1ocAxv3c8wHRDjYnR9agCa2ZP%2BsD2JrhKRlGa3PZeqc7MzGCVlCHSCTWkfgKM3mT43QQ8i2w%3D%3D  
+
+[debug] [2019-04-09T05:40:27.729Z] <<< HTTP RESPONSE 200
+[info] ✔  functions: functions folder uploaded successfully
+[debug] [2019-04-09T05:40:27.731Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/projects/notbanana-7f869/locations/-/functions  
+ 
+[debug] [2019-04-09T05:40:28.118Z] <<< HTTP RESPONSE 200
+[info] i  functions: updating Node.js 8 function removeBg(us-central1)...
+[debug] [2019-04-09T05:40:28.120Z] Trigger is:  {"eventTrigger":{"resource":"projects/notbanana-7f869/databases/(default)/documents/orders/{orderId}","eventType":"providers/cloud.firestore/eventTypes/document.create","service":"firestore.googleapis.com"}}
+[debug] [2019-04-09T05:40:28.122Z] >>> HTTP REQUEST PATCH https://cloudfunctions.googleapis.com/v1/projects/notbanana-7f869/locations/us-central1/functions/removeBg {"updateMask":"sourceUploadUrl,name,labels,runtime,availableMemoryMb,eventTrigger.resource,eventTrigger.eventType,eventTrigger.service"} 
+
+[debug] [2019-04-09T05:40:28.672Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:28.674Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:28.871Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:30.873Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:31.215Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:33.219Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:33.425Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:35.426Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:35.643Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:37.648Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:37.899Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:39.901Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:40.119Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:42.124Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:42.417Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:44.418Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:44.631Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:46.632Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
+[debug] [2019-04-09T05:40:47.032Z] <<< HTTP RESPONSE 200
+[debug] [2019-04-09T05:40:49.034Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/bm90YmFuYW5hLTdmODY5L3VzLWNlbnRyYWwxL3JlbW92ZUJnLzZ5c3h4Yk1FVHRB  
+ 
