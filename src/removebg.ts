@@ -18,9 +18,14 @@ import { STATE } from './models/state'
  * [UI] Update the order state to error.
  * @param orderRef Current order firestore document reference
  */
-const setOrderError = (orderRef: FirebaseFirestore.DocumentReference) => {
+const setOrderError = (
+  orderRef: FirebaseFirestore.DocumentReference,
+  error: string = ''
+) => {
   try {
-    return orderRef.update({ state: STATE.ERROR })
+    if (!orderRef) throw 'setOrderError: No document reference.'
+
+    return orderRef.update({ state: STATE.ERROR, error })
   } catch (error) {
     throw new Error(error)
   }
@@ -30,8 +35,13 @@ const setOrderError = (orderRef: FirebaseFirestore.DocumentReference) => {
  * Get a signed URL from App Engine
  * @param bucketFilePath File path in GCS project bucket
  */
-const getGCSSignedUrl = async (bucketFilePath: File): Promise<string> => {
-  const [signedURL] = await bucketFilePath.getSignedUrl(signedUrlCfg)
+const getGCSSignedURL = async (bucketFilePath: File): Promise<string> => {
+  if (!bucketFilePath) throw 'getGCSSignedURL: Argument is missing.'
+
+  const [signedURL]: [string] = await bucketFilePath.getSignedUrl(signedUrlCfg)
+
+  if (!signedURL) throw 'getGCSSignedURL: No signed URL thrown back.'
+
   return signedURL
 }
 
@@ -43,8 +53,12 @@ const getGCSSignedUrl = async (bucketFilePath: File): Promise<string> => {
 const saveFileToBucket = async (
   bucketFilePath: File,
   imageBuffer: Buffer
-): Promise<void> =>
-  bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
+): Promise<void> => {
+  if (!bucketFilePath || !imageBuffer)
+    throw 'saveFileToBucket: Argument is missing.'
+
+  return bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
+}
 
 /**
  * Resize an image buffer
@@ -56,20 +70,26 @@ const resizeImageBuffer = async (
   width: number,
   height: number,
   imageBuffer: Buffer
-): Promise<Buffer> =>
-  sharp(imageBuffer)
+): Promise<Buffer> => {
+  if (!width || !height || !imageBuffer)
+    throw 'resizeImageBuffer: Argument is missing.'
+
+  return sharp(imageBuffer)
     .resize(width, height, { fit: 'inside' })
     .png()
     .toBuffer()
+}
 
 /**
  * Add an overlay (watermark) to the image buffer
  * @param imageBuffer Image buffer thrown back by the API
  */
 const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
-  const overlayBuffer = await rp(overlayURL, { encoding: null })
+  if (!imageBuffer) throw 'overlayImageBuffer: No imageBuffer buffer.'
 
-  if (!overlayBuffer) Promise.reject('No buffer')
+  const overlayBuffer: Buffer = await rp(overlayURL, { encoding: null })
+
+  if (!overlayBuffer) throw 'overlayImageBuffer: No overlay buffer.'
 
   return sharp(imageBuffer)
     .composite([{ input: overlayBuffer, tile: true }])
@@ -98,15 +118,19 @@ export const imageManipulation = async (
   imageBuffer: Buffer,
   fileName: string
 ): Promise<FirebaseFirestore.WriteResult> => {
-  if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
-
-  // GCS bucket paths
-  const [watermarkPath, thumbnailPath]: File[] = [
-    bucket.file(`@watermarks/${userId}/${fileName}_${randomFileName()}.png`),
-    bucket.file(`@thumbnails/${userId}/${fileName}_${randomFileName()}.png`)
-  ]
-
   try {
+    if (!orderRef || !imageBuffer || !fileName || !userId)
+      throw 'imageManipulation: Argument is missing.'
+
+    // GCS bucket paths
+    const [watermarkPath, thumbnailPath]: File[] = [
+      bucket.file(`@watermarks/${userId}/${fileName}_${randomFileName()}.png`),
+      bucket.file(`@thumbnails/${userId}/${fileName}_${randomFileName()}.png`)
+    ]
+
+    if (!watermarkPath || !thumbnailPath)
+      throw 'imageManipulation: GCS Path is missing.'
+
     const sharp$: Promise<Buffer>[] = [
       overlayImageBuffer(imageBuffer),
       resizeImageBuffer(96, 96, imageBuffer)
@@ -116,14 +140,20 @@ export const imageManipulation = async (
       sharp$
     )
 
+    if (!watermarkBuffer || !thumbnailBuffer)
+      throw 'imageManipulation: Buffer is missing.'
+
     const gcs$: any[] = [
       saveFileToBucket(watermarkPath, watermarkBuffer),
       saveFileToBucket(thumbnailPath, thumbnailBuffer),
-      getGCSSignedUrl(watermarkPath),
-      getGCSSignedUrl(thumbnailPath)
+      getGCSSignedURL(watermarkPath),
+      getGCSSignedURL(thumbnailPath)
     ]
 
     const [, , watermarkURL, thumbnailURL] = await Promise.all(gcs$)
+
+    if (!watermarkURL || !thumbnailURL)
+      throw 'imageManipulation: Signed URL is missing.'
 
     return orderRef.update({
       watermarkURL,
@@ -131,8 +161,7 @@ export const imageManipulation = async (
       state: STATE.SUCCESS
     })
   } catch (error) {
-    console.info(error)
-    return setOrderError(orderRef)
+    return setOrderError(orderRef, error)
   }
 }
 
@@ -144,9 +173,20 @@ export const removeBg = functions
   .firestore.document('orders/{orderId}')
   .onCreate(
     async (snapShot: FirebaseFirestore.DocumentSnapshot, { params }) => {
-      const { orderId } = params
-      const { userId, originalURL, fileName } = snapShot.data()
-      const orderRef = ordersRef.doc(orderId)
+      const { orderId }: { [option: string]: any } = params
+
+      const orderRef: FirebaseFirestore.DocumentReference = ordersRef.doc(
+        orderId
+      )
+
+      const {
+        userId,
+        originalURL,
+        fileName
+      }: FirebaseFirestore.DocumentData = snapShot.data()
+
+      if (!orderId || !userId || !originalURL || !fileName || !orderRef)
+        throw 'removeBg: Argument is missing.'
 
       try {
         const imageBuffer: Buffer = await rp({
@@ -154,11 +194,11 @@ export const removeBg = functions
           formData: { ...apiOpts.formData, image_url: originalURL }
         })
 
-        if (!imageBuffer) return setOrderError(orderRef)
+        if (!imageBuffer) throw 'removeBg: No imageBuffer.'
 
         return imageManipulation(orderRef, userId, imageBuffer, fileName)
       } catch (error) {
-        return setOrderError(orderRef)
+        return setOrderError(orderRef, error)
       }
     }
   )
