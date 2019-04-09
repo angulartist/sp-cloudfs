@@ -5,7 +5,7 @@ import * as fs from 'fs-extra'
 import * as sharp from 'sharp'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { db, bucket, signedUrlCfg, apiOpts } from './config'
+import { db, bucket, signedUrlCfg, apiOpts, gcs } from './config'
 import { randomFileName, makeBucketFilePath } from './helpers'
 
 import { STATE } from './models/state'
@@ -94,25 +94,29 @@ export const imageManipulation = async (
   if (!imageBuffer || !fileName || !userId) return setOrderError(orderRef)
 
   // GCS bucket paths
-  const watermarkBucketFilePath: File = bucket.file(
-    `@watermarks/${userId}/${fileName}_${randomFileName()}.png`
-  )
-  const thumbnailBucketFilePath: File = bucket.file(
-    `@thumbnails/${userId}/${fileName}_${randomFileName()}.png`
-  )
+  const [watermarkPath, thumbnailPath]: File[] = [
+    bucket.file(`@watermarks/${userId}/${fileName}_${randomFileName()}.png`),
+    bucket.file(`@thumbnails/${userId}/${fileName}_${randomFileName()}.png`)
+  ]
 
   try {
-    const [watermarkImageBuffer, thumbnailImageBuffer] = await Promise.all([
+    const sharp$: Promise<Buffer>[] = [
       overlayImageBuffer(imageBuffer),
       resizeImageBuffer(96, 96, imageBuffer)
-    ])
+    ]
 
-    const [watermarkURL, thumbnailURL] = await Promise.all([
-      getGCSSignedUrl(watermarkBucketFilePath),
-      getGCSSignedUrl(thumbnailBucketFilePath),
-      saveFileToBucket(watermarkBucketFilePath, watermarkImageBuffer),
-      saveFileToBucket(thumbnailBucketFilePath, thumbnailImageBuffer)
-    ])
+    const [watermarkBuffer, thumbnailBuffer]: Buffer[] = await Promise.all(
+      sharp$
+    )
+
+    const gcs$: any[] = [
+      saveFileToBucket(watermarkPath, watermarkBuffer),
+      saveFileToBucket(thumbnailPath, thumbnailBuffer),
+      getGCSSignedUrl(watermarkPath),
+      getGCSSignedUrl(thumbnailPath)
+    ]
+
+    const [, , watermarkURL, thumbnailURL] = await Promise.all(gcs$)
 
     return orderRef.update({
       watermarkURL,
@@ -120,6 +124,7 @@ export const imageManipulation = async (
       state: STATE.SUCCESS
     })
   } catch (error) {
+    console.info(error)
     return setOrderError(orderRef)
   }
 }
@@ -133,9 +138,7 @@ export const removeBg = functions
   .onCreate(
     async (snapShot: FirebaseFirestore.DocumentSnapshot, { params }) => {
       const { orderId } = params
-
       const { userId, originalURL, fileName } = snapShot.data()
-
       const orderRef = ordersRef.doc(orderId)
 
       try {
