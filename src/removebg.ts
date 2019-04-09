@@ -1,18 +1,15 @@
 import * as functions from 'firebase-functions'
 import { File } from '@google-cloud/storage'
-import * as rp from 'request-promise'
-import * as sharp from 'sharp'
-import {
-  db,
-  bucket,
-  signedUrlCfg,
-  apiOpts,
-  overlayURL,
-  ordersRef
-} from './config'
+import { bucket, ordersRef } from './config'
 import { randomFileName } from './helpers'
-// Models
 import { STATE } from './models/state'
+import {
+  overlayImageBuffer,
+  resizeImageBuffer,
+  saveFileToBucket,
+  getGCSSignedURL,
+  removeBgApi
+} from './utils'
 
 /**
  * [UI] Update the order state to error.
@@ -29,80 +26,6 @@ const setOrderError = (
   } catch (error) {
     throw new Error(error)
   }
-}
-
-/**
- * Get a signed URL from App Engine
- * @param bucketFilePath File path in GCS project bucket
- */
-const getGCSSignedURL = async (bucketFilePath: File): Promise<string> => {
-  if (!bucketFilePath) throw 'getGCSSignedURL: Argument is missing.'
-
-  const [signedURL]: [string] = await bucketFilePath.getSignedUrl(signedUrlCfg)
-
-  if (!signedURL) throw 'getGCSSignedURL: No signed URL thrown back.'
-
-  return signedURL
-}
-
-/**
- * Upload a file to GCS for a given path
- * @param bucketFilePath File path in GCS project bucket
- * @param imageBuffer Raw image data
- */
-const saveFileToBucket = async (
-  bucketFilePath: File,
-  imageBuffer: Buffer
-): Promise<void> => {
-  if (!bucketFilePath || !imageBuffer)
-    throw 'saveFileToBucket: Argument is missing.'
-
-  return bucketFilePath.save(imageBuffer, { contentType: 'image/png' })
-}
-
-/**
- * Resize an image buffer
- * @param width Width of the image
- * @param height Height of the image
- * @param tmpFilePath File path in /tmp/ directory
- */
-const resizeImageBuffer = async (
-  width: number,
-  height: number,
-  imageBuffer: Buffer
-): Promise<Buffer> => {
-  if (!width || !height || !imageBuffer)
-    throw 'resizeImageBuffer: Argument is missing.'
-
-  return sharp(imageBuffer)
-    .resize(width, height, { fit: 'inside' })
-    .png()
-    .toBuffer()
-}
-
-/**
- * Add an overlay (watermark) to the image buffer
- * @param imageBuffer Image buffer thrown back by the API
- */
-const overlayImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
-  if (!imageBuffer) throw 'overlayImageBuffer: No imageBuffer buffer.'
-
-  const overlayBuffer: Buffer = await rp(overlayURL, { encoding: null })
-
-  if (!overlayBuffer) throw 'overlayImageBuffer: No overlay buffer.'
-
-  return sharp(imageBuffer)
-    .composite([{ input: overlayBuffer, tile: true }])
-    .toBuffer()
-}
-
-/**
- * Calculate image buffer dimensions and calculate the price
- * @param imageBuffer Image buffer thrown back by the API
- */
-const calcImageCost = async (imageBuffer: Buffer) => {
-  const imagePipeline = sharp(imageBuffer)
-  const { width, height } = await imagePipeline.metadata()
 }
 
 /**
@@ -189,10 +112,7 @@ export const removeBg = functions
         throw 'removeBg: Argument is missing.'
 
       try {
-        const imageBuffer: Buffer = await rp({
-          ...apiOpts,
-          formData: { ...apiOpts.formData, image_url: originalURL }
-        })
+        const imageBuffer: Buffer = await removeBgApi(originalURL)
 
         if (!imageBuffer) throw 'removeBg: No imageBuffer.'
 
