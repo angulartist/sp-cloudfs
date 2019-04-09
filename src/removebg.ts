@@ -1,12 +1,9 @@
 import * as functions from 'firebase-functions'
 import { File } from '@google-cloud/storage'
 import * as rp from 'request-promise'
-import * as fs from 'fs-extra'
 import * as sharp from 'sharp'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { db, bucket, signedUrlCfg, apiOpts, gcs } from './config'
-import { randomFileName, makeBucketFilePath } from './helpers'
+import { db, bucket, signedUrlCfg, apiOpts } from './config'
+import { randomFileName } from './helpers'
 
 import { STATE } from './models/state'
 
