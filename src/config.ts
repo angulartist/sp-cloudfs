@@ -18,8 +18,7 @@ export const signedUrlCfg: {
 } = { action: 'read', expires: '01-01-6969' }
 
 // RemoveBG
-export const overlayURL: string =
-  'https://i.kym-cdn.com/photos/images/masonry/001/452/786/271.png'
+export const overlayURL: string = 'https://i.imgur.com/ba9UsOv.png'
 const size: string = 'auto'
 const encoding: any = null
 export const key: string = functions.config().removebg.key

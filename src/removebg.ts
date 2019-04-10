@@ -137,16 +137,18 @@ export const removeBg = functions
         fileName
       }: FirebaseFirestore.DocumentData = snapShot.data() as Order
 
-      if (!orderId || !userId || !originalURL || !fileName || !orderRef)
-        throw 'removeBg: Argument is missing.'
-
-      if (userId !== initiatorId)
-        throw 'removeBg: Trying to access to a private collection.'
-
       try {
+        if (!orderId || !userId || !originalURL || !fileName || !orderRef)
+          throw 'removeBg: Argument is missing.'
+
+        if (userId !== initiatorId)
+          throw 'removeBg: Trying to access to a private collection.'
+
         const imageBuffer: Buffer = await removeBgApi(originalURL)
 
         if (!imageBuffer) throw 'removeBg: No imageBuffer.'
+
+        console.log(imageBuffer)
 
         await saveToPrivateCollection(userId, orderId, fileName, imageBuffer)
 
