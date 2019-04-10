@@ -7,9 +7,6 @@ admin.initializeApp()
 export const db: FirebaseFirestore.Firestore = admin.firestore()
 db.settings({ timestampsInSnapshots: true })
 export const timestamp: FirebaseFirestore.FieldValue = admin.firestore.FieldValue.serverTimestamp()
-export const ordersRef: FirebaseFirestore.CollectionReference = db.collection(
-  'orders'
-)
 
 // Storage
 export const gcs: storage.Storage = new storage.Storage()

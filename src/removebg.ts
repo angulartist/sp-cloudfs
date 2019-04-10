@@ -1,8 +1,7 @@
 import * as functions from 'firebase-functions'
 import { File } from '@google-cloud/storage'
-import { bucket, ordersRef } from './config'
+import { bucket, db } from './config'
 import { randomFileName } from './helpers'
-import { STATE } from './models/state'
 import {
   overlayImageBuffer,
   resizeImageBuffer,
@@ -10,6 +9,8 @@ import {
   getGCSSignedURL,
   removeBgApi
 } from './utils'
+// Models
+import { Order, STATE } from './models'
 
 /**
  * [UI] Update the order state to error.
@@ -54,26 +55,26 @@ export const imageManipulation = async (
     if (!watermarkPath || !thumbnailPath)
       throw 'imageManipulation: GCS Path is missing.'
 
-    const sharp$: Promise<Buffer>[] = [
+    const _sharp: Promise<Buffer>[] = [
       overlayImageBuffer(imageBuffer),
       resizeImageBuffer(96, 96, imageBuffer)
     ]
 
     const [watermarkBuffer, thumbnailBuffer]: Buffer[] = await Promise.all(
-      sharp$
+      _sharp
     )
 
     if (!watermarkBuffer || !thumbnailBuffer)
       throw 'imageManipulation: Buffer is missing.'
 
-    const gcs$: any[] = [
+    const _gcs: any[] = [
       saveFileToBucket(watermarkPath, watermarkBuffer),
       saveFileToBucket(thumbnailPath, thumbnailBuffer),
       getGCSSignedURL(watermarkPath),
       getGCSSignedURL(thumbnailPath)
     ]
 
-    const [, , watermarkURL, thumbnailURL] = await Promise.all(gcs$)
+    const [, , watermarkURL, thumbnailURL]: string[] = await Promise.all(_gcs)
 
     if (!watermarkURL || !thumbnailURL)
       throw 'imageManipulation: Signed URL is missing.'
@@ -88,37 +89,70 @@ export const imageManipulation = async (
   }
 }
 
+const saveToPrivateCollection = async (
+  userId: string,
+  orderId: string,
+  fileName: string,
+  imageBuffer: Buffer
+): Promise<FirebaseFirestore.WriteResult> => {
+  if (!userId || !orderId || !fileName || !imageBuffer)
+    throw 'saveToPrivateCollection: Argument is missing.'
+
+  const [privateRef, privateBucketPath]: any[] = [
+    db.collection(`users/${userId}/private_images`),
+    bucket.file(`@privates/${userId}/${fileName}_${randomFileName()}.png`)
+  ]
+
+  if (!privateRef || !privateBucketPath) throw 'removeBg: GCS Path is missing.'
+
+  const _gcs: any[] = [
+    saveFileToBucket(privateBucketPath, imageBuffer),
+    getGCSSignedURL(privateBucketPath)
+  ]
+
+  const [, privateURL]: string[] = await Promise.all(_gcs)
+
+  if (!privateURL) throw 'removeBg: privateURL is missing.'
+
+  return privateRef.doc(orderId).set({ privateURL })
+}
+
 /**
  * Main functon.
  */
 export const removeBg = functions
   .runWith({ memory: '1GB' })
-  .firestore.document('orders/{orderId}')
+  .firestore.document('users/{userId}/orders/{orderId}')
   .onCreate(
     async (snapShot: FirebaseFirestore.DocumentSnapshot, { params }) => {
-      const { orderId }: { [option: string]: any } = params
+      const { orderId, userId: initiatorId }: { [option: string]: any } = params
 
-      const orderRef: FirebaseFirestore.DocumentReference = ordersRef.doc(
-        orderId
+      const orderRef: FirebaseFirestore.DocumentReference = db.doc(
+        `users/${initiatorId}/orders/${orderId}`
       )
 
       const {
         userId,
         originalURL,
         fileName
-      }: FirebaseFirestore.DocumentData = snapShot.data()
+      }: FirebaseFirestore.DocumentData = snapShot.data() as Order
 
       if (!orderId || !userId || !originalURL || !fileName || !orderRef)
         throw 'removeBg: Argument is missing.'
+
+      if (userId !== initiatorId)
+        throw 'removeBg: Trying to access to a private collection.'
 
       try {
         const imageBuffer: Buffer = await removeBgApi(originalURL)
 
         if (!imageBuffer) throw 'removeBg: No imageBuffer.'
 
+        await saveToPrivateCollection(userId, orderId, fileName, imageBuffer)
+
         return imageManipulation(orderRef, userId, imageBuffer, fileName)
       } catch (error) {
-        return setOrderError(orderRef, error)
+        return setOrderError(orderRef, JSON.stringify(error))
       }
     }
   )
